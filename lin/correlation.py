@@ -6,36 +6,44 @@ from scipy.stats import zscore
 from scipy.stats import pearsonr, spearmanr
 
 # input
-# expression_df = pd.read_csv("gene_expression.csv", index_col=0)
+df = pd.read_csv("dummy_zscore2.txt", sep=r"\s+", index_col=0)
+print(df)
+print(df.shape)        # should be (5, 6)
+print(df.index)        # should be ['gene1', 'gene2', ...]
+print(df.columns)      # should be ['s1NM', 's2NM', ...]
+print(df.dtypes)       # should all be float
 
-# testing
-data = {
-    "Sample1": [120, 90, 300, 10],
-    "Sample2": [150, 100, 250, 15],
-    "Sample3": [130, 95, 280, 12],
-    "Sample4": [160, 110, 260, 14],
-    "Sample5": [125, 98, 275, 13],
-    "Sample6": [140, 105, 290, 16],
-    "Sample7": [135, 102, 265, 12],
-    "Sample8": [145, 108, 280, 15],
-    "Sample9": [150, 95, 270, 14],
-    "Sample10": [128, 100, 285, 11],
-}
-genes = ["GeneA", "GeneB", "GeneC", "GeneD"]
-df = pd.DataFrame(data, index=genes)
-df = df.astype(float)
+# Split columns by substring
+nm_cols = [c for c in df.columns if "NM" in c]
+ds_cols = [c for c in df.columns if "DS" in c]
+
+# Create two separate DataFrames
+df_nm = df[nm_cols]
+df_ds = df[ds_cols]
+
+print("NM subset:\n", df_nm.head(), "\n")
+print("DS subset:\n", df_ds.head(), "\n")
+
+
+df_nm.to_csv("dummy_NM_only.csv")
+df_ds.to_csv("dummy_DS_only.csv")
+
 
 # Z-score normalization across genes for each sample (axis=0)
-expression_df = df.apply(lambda x: zscore(x), axis=1, result_type='broadcast')
+#df = df.astype(float)
+#expression_df = df.apply(lambda x: zscore(x), axis=1, result_type='broadcast')
 #print(expression_df.dtypes)
-#expression_df = df
+
+expression_df = df_ds # using only NM samples for correlation
+expression_df = expression_df.loc[expression_df.var(axis=1) > 1e-6]
+
 #print(expression_df)
 
 # gene-gene correlation matrix
 genes = expression_df.index
-print(genes)
+#print(genes)
 n_genes = len(genes)
-print(n_genes)
+#print(n_genes)
 
 pearson_corr = pd.DataFrame(np.zeros((n_genes, n_genes)), index=genes, columns=genes)
 pearson_pval = pd.DataFrame(np.zeros((n_genes, n_genes)), index=genes, columns=genes)
@@ -84,11 +92,11 @@ print(pearson_corr)
 print(pearson_fdr)
 print(spearman_corr)
 print(spearman_fdr) 
-pearson_corr.to_csv("gene_correlation_matrix_linear.csv")
-pearson_fdr.to_csv("gene_correlation_fdr_linear.csv")
+pearson_corr.to_csv("gene_correlation_R2_linear_DS.csv")
+pearson_fdr.to_csv("gene_correlation_fdr_linear_DS.csv")
 
-spearman_corr.to_csv("gene_correlation_matrix_non_linear.csv")
-spearman_fdr.to_csv("gene_correlation_fdr_non_linear.csv")
+spearman_corr.to_csv("gene_correlation_R2_non_linear_DS.csv")
+spearman_fdr.to_csv("gene_correlation_fdr_non_linear_DS.csv")
 
 
 # heatmap
