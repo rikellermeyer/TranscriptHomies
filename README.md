@@ -1,3 +1,4 @@
+hello
 # TranscriptHomies:
 
 In transcriptomic data, changes in one gene’s expression may lead to coordinated shifts in others. However, exploring these correlations manually is time-consuming and not easily scalable across multiple datasets. This project aims to build a tool that identifies and visualizes gene–gene expression correlations between two biological groups (e.g., diseased vs. normal samples).
