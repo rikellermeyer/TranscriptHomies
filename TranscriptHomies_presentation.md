@@ -1,6 +1,8 @@
-# TranscriptHomies
+# TranscriptHomies 🧬🤝
 
 **Members: Grace Beggs, Caroline Harrer, HeaJin Hong, Tess Kelly, Zilin Xianyu**
+
+**TAs: Riley Kellermeyer, Bekah Kim**
 
 
 ## Objective: 
