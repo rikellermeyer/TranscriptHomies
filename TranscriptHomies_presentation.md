@@ -1,4 +1,4 @@
-# TranscriptHomies
+# TranscriptHomies 🧬🤝
 
 **Members: Grace Beggs, Caroline Harrer, HeaJin Hong, Tess Kelly, Zilin Xianyu**
 

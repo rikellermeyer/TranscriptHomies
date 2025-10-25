@@ -4,14 +4,15 @@ import pandas as pd
 import numpy as np
 from scipy.stats import zscore
 from scipy.stats import pearsonr, spearmanr
+from scipy.stats import false_discovery_control
 
 # input
 df = pd.read_csv("dummy_zscore2.txt", sep=r"\s+", index_col=0)
 print(df)
-print(df.shape)        # should be (5, 6)
-print(df.index)        # should be ['gene1', 'gene2', ...]
-print(df.columns)      # should be ['s1NM', 's2NM', ...]
-print(df.dtypes)       # should all be float
+# print(df.shape)        # should be (5, 6)
+# print(df.index)        # should be ['gene1', 'gene2', ...]
+# print(df.columns)      # should be ['s1NM', 's2NM', ...]
+# print(df.dtypes)       # should all be float
 
 # Split columns by substring
 nm_cols = [c for c in df.columns if "NM" in c]
@@ -25,8 +26,8 @@ print("NM subset:\n", df_nm.head(), "\n")
 print("DS subset:\n", df_ds.head(), "\n")
 
 
-df_nm.to_csv("dummy_NM_only.csv")
-df_ds.to_csv("dummy_DS_only.csv")
+# df_nm.to_csv("dummy_NM_only.csv")
+# df_ds.to_csv("dummy_DS_only.csv")
 
 
 # Z-score normalization across genes for each sample (axis=0)
@@ -35,7 +36,8 @@ df_ds.to_csv("dummy_DS_only.csv")
 #print(expression_df.dtypes)
 
 expression_df = df_ds # using only NM samples for correlation
-expression_df = expression_df.loc[expression_df.var(axis=1) > 1e-6]
+name = "DS"
+expression_df = expression_df.loc[expression_df.var(axis=1) > 1e-6] # check the variance calculation logic
 
 #print(expression_df)
 
@@ -43,7 +45,6 @@ expression_df = expression_df.loc[expression_df.var(axis=1) > 1e-6]
 genes = expression_df.index
 #print(genes)
 n_genes = len(genes)
-#print(n_genes)
 
 pearson_corr = pd.DataFrame(np.zeros((n_genes, n_genes)), index=genes, columns=genes)
 pearson_pval = pd.DataFrame(np.zeros((n_genes, n_genes)), index=genes, columns=genes)
@@ -64,39 +65,57 @@ for i, g1 in enumerate(genes):
             spearman_pval.loc[g1, g2] = spearman_pval.loc[g2, g1] = p_s
 
 
-# FDR (Benjamini-Hochberg)
-def fdr_bh(pvals):
-    pvals = np.array(pvals)
-    n = len(pvals)
-    sorted_idx = np.argsort(pvals)
-    sorted_pvals = pvals[sorted_idx]
-    fdr = sorted_pvals * n / (np.arange(1, n+1))
-    fdr = np.minimum.accumulate(fdr[::-1])[::-1]  # enforce monotonicity
-    fdr[fdr > 1] = 1
-    unsorted_fdr = np.empty_like(fdr)
-    unsorted_fdr[sorted_idx] = fdr
-    return unsorted_fdr
-
+# FDR (Benjamini-Hochberg) 
+# explain why FDR correction is needed
 pearson_fdr = pd.DataFrame(
-    fdr_bh(pearson_pval.values.flatten()).reshape(n_genes, n_genes),
+    false_discovery_control(pearson_pval.values.flatten(), method='bh').reshape(n_genes, n_genes),
     index=genes, columns=genes
 )
 
 spearman_fdr = pd.DataFrame(
-    fdr_bh(spearman_pval.values.flatten()).reshape(n_genes, n_genes),
+    false_discovery_control(spearman_pval.values.flatten(), method='bh').reshape(n_genes, n_genes),
     index=genes, columns=genes
 )
 
-
+print("Pearson Correlation Matrix:")
 print(pearson_corr)
+print("Pearson FDR Matrix:")
 print(pearson_fdr)
+print("Spearman Correlation Matrix:")
 print(spearman_corr)
+print("Spearman FDR Matrix:")
 print(spearman_fdr) 
-pearson_corr.to_csv("gene_correlation_R2_linear_DS.csv")
-pearson_fdr.to_csv("gene_correlation_fdr_linear_DS.csv")
 
-spearman_corr.to_csv("gene_correlation_R2_non_linear_DS.csv")
-spearman_fdr.to_csv("gene_correlation_fdr_non_linear_DS.csv")
+# Define FDR significance threshold
+fdr_threshold = 0.05
+
+# Count significant gene–gene pairs (excluding self-pairs)
+pearson_sig = np.sum((pearson_fdr < fdr_threshold).values) - len(genes)
+spearman_sig = np.sum((spearman_fdr < fdr_threshold).values) - len(genes)
+
+print(f"Significant Pearson pairs (FDR<{fdr_threshold}): {pearson_sig}")
+print(f"Significant Spearman pairs (FDR<{fdr_threshold}): {spearman_sig}")
+
+# Compare counts
+# highlight pearson vs spearman choosen method
+if pearson_sig > spearman_sig:
+    chosen_method = "pearson"
+elif spearman_sig > pearson_sig:
+    chosen_method = "spearman"
+else:
+    # Tie → compare average |r²|
+    pearson_r2 = np.nanmean(np.square(pearson_corr.values))
+    spearman_r2 = np.nanmean(np.square(spearman_corr.values))
+    chosen_method = "pearson" if pearson_r2 > spearman_r2 else "spearman"
+
+print(f"Chosen method: {chosen_method.upper()}")
+
+if chosen_method == "pearson":
+    pearson_corr.to_csv(f"pearson_gene_correlation_r2_{name}.csv")
+    pearson_fdr.to_csv(f"pearson_gene_correlation_fdr_{name}.csv")
+else:
+    spearman_corr.to_csv(f"spearman_gene_correlation_r2_{name}.csv")
+    spearman_fdr.to_csv(f"spearman_gene_correlation_fdr_{name}.csv")
 
 
 # heatmap
