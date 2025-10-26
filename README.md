@@ -25,7 +25,6 @@ Pipeline workflow
 
 ## Input data search and formatting (Caroline)
 Public databases (including NCBI Gene Expression Omnibus (GEO)) were screened to identify bulk RNA-seq datasets comparing control and experimental conditions, with an emphasis on cancer-related research. A breast cancer dataset comprising paired samples of adjacent normal (control) and tumor (experimental) tissues from n = 6 patients was selected for subsequent analysis (GEO accession: GSE280284, https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE280284 , accessed 10/25/2025).
-(if you want to insert an image, put images in folder, insert using [!filename.png])
 
 >**Generation of a dictionary of lists for visualisation of raw counts**
 For the visualization of gene expression levels across samples from raw data:
