@@ -147,8 +147,17 @@ top20_file = f"DE_{cond1}_vs_{cond2}_paired_filtered_top20.txt"
 top20 = sig_results.head(20)
 top20.to_csv(top20_file, sep="\t")
 
-# Save filtered counts
-filtered_counts.to_csv('final_input_filtered.csv', index=True)
+# Save filtered counts with gene annotations
+filtered_counts_with_annotations = filtered_counts.copy()
+if gene_symbols is not None:
+    filtered_counts_with_annotations = filtered_counts_with_annotations.merge(
+        gene_symbols, left_index=True, right_index=True, how="left"
+    )
+if gene_names is not None:
+    filtered_counts_with_annotations = filtered_counts_with_annotations.merge(
+        gene_names, left_index=True, right_index=True, how="left"
+    )
+filtered_counts_with_annotations.to_csv('final_input_filtered.csv', index=True)
 
 # --- Print summary ---
 print(f"\n✅ DESeq2 Analysis Complete!")
