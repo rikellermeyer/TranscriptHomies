@@ -6,13 +6,18 @@ from scipy.stats import zscore
 from scipy.stats import pearsonr, spearmanr
 from scipy.stats import false_discovery_control
 
-# input
+# input 1: gene expression matrix (genes x samples)
 df = pd.read_csv("dummy_zscore2.txt", sep=r"\s+", index_col=0)
-print(df)
+print(df.head())
 # print(df.shape)        # should be (5, 6)
 # print(df.index)        # should be ['gene1', 'gene2', ...]
 # print(df.columns)      # should be ['s1NM', 's2NM', ...]
 # print(df.dtypes)       # should all be float
+
+# input 2: pathway
+pathway = pd.read_csv("reactome_pathways_genes.csv")
+print(pathway.head()) 
+
 
 # Split columns by substring
 nm_cols = [c for c in df.columns if "NM" in c]
@@ -37,9 +42,8 @@ print("DS subset:\n", df_ds.head(), "\n")
 
 expression_df = df_ds # using only NM samples for correlation
 name = "DS"
-expression_df = expression_df.loc[expression_df.var(axis=1) > 1e-6] # check the variance calculation logic
-
-#print(expression_df)
+expression_df = expression_df.loc[expression_df.var(axis=1) > 1e-6] 
+print(expression_df)
 
 # gene-gene correlation matrix
 genes = expression_df.index
@@ -132,5 +136,61 @@ sns.heatmap(spearman_corr, annot=True, cmap="coolwarm", center=0, fmt=".2f")
 plt.title("Gene–Gene Correlation Heatmap (Non-Linear)")
 plt.show()
 
+#####################
+# PCA plot based on expression_df
+######################
+from sklearn.decomposition import PCA
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+data = df.loc[df.var(axis=1) > 1e-6] 
+print("Data for PCA:")
+print(data)
+
+# expression_df: rows = genes, columns = samples
+data_T = data.T  # now rows = samples, columns = genes
+print("Transposed Data for PCA:")
+print(data_T)
+
+# Define a function to assign group based on column names
+def assign_group(sample_name):
+    if 'DS' in sample_name:
+        return 'Disease'
+    elif 'NM' in sample_name:
+        return 'Normal'
+    else:
+        return 'Unknown'
+# Apply to all sample names (index after transpose)
+groups = [assign_group(s) for s in data_T.index]
+print(groups)
+
+# Initialize PCA (2 components for a 2D plot)
+pca = PCA(n_components=2)
+
+# Fit PCA to the data
+pca_result = pca.fit_transform(data_T)
+
+# Create a DataFrame for plotting
+pca_df = pd.DataFrame(pca_result, columns=['PC1', 'PC2'], index=data_T.index)
+
+# annotation
+pca_df['Group'] = groups
+print("PCA Result DataFrame:")
+print(pca_df)
+
+plt.figure(figsize=(8,6))
+sns.scatterplot(x='PC1', y='PC2', hue='Group', data=pca_df, s=100, alpha=0.7)  # added alpha
+plt.xlabel(f"PC1 ({pca.explained_variance_ratio_[0]*100:.1f}%)")
+plt.ylabel(f"PC2 ({pca.explained_variance_ratio_[1]*100:.1f}%)")
+plt.title("PCA of Gene Expression")
+plt.legend(title='Group')
+plt.show()
 
 
+
+plt.figure(figsize=(6,4))
+plt.bar(range(1, len(pca.explained_variance_ratio_)+1), pca.explained_variance_ratio_*100)
+plt.xlabel('Principal Component')
+plt.ylabel('Variance Explained (%)')
+plt.title('Variance Explained by Each PC')
+plt.show()
