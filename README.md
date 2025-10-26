@@ -21,7 +21,7 @@ Our tool addresses this problem.
 ## Data Organization (Grace)
 
 Pipeline workflow
-![image](/Users/pfb/transcripthomies/TranscriptHomies/TH_flowchart.png)
+![alt text](TH_flowchart.png)
 
 ## Input data search and formatting (Caroline)
 Public databases (including NCBI Gene Expression Omnibus (GEO)) were screened to identify bulk RNA-seq datasets comparing control and experimental conditions, with an emphasis on cancer-related research. A breast cancer dataset comprising paired samples of adjacent normal (control) and tumor (experimental) tissues from n = 6 patients was selected for subsequent analysis (GEO accession: GSE280284, https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE280284 , accessed 10/25/2025).
@@ -210,8 +210,11 @@ print(f"P-value = {p_value:.2e}")
 >**MASTER SCRIPT USING JUPITER NOTEBOOK**
 
 **Acknowledgement**
-![image](/Users/pfb/transcripthomies/TranscriptHomies/group.JPG)
+![alt text](group.JPG)
 
 
 
 
+
+
+[def]: /Users/pfb/transcripthomies/TranscriptHomies/TH_flowchart.png
