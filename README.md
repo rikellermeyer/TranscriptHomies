@@ -18,26 +18,14 @@ Build a tool that identifies and visualizes gene–gene expression correlations 
 ## Data Organization (Grace)
 
 (include text here)
-
-```
-insert code here
-
-
-## Input data search and formatting (Caroline)
-
-(Include text here)
-(if you want to insert an image, put images in folder, insert using [!filename.png])
+![image](/Users/pfb/transcripthomies/TranscriptHomies/TH_flowchart.png)
 
 ```
 insert code here
 
 
 
-
 ```
-
-```
-
 
 ## Input data search and formatting (Caroline)
 Public databases (including NCBI Gene Expression Omnibus (GEO)) were screened to identify bulk RNA-seq datasets comparing control and experimental conditions, with an emphasis on cancer-related research. A breast cancer dataset comprising paired samples of adjacent normal (control) and tumor (experimental) tissues from n = 6 patients was selected for subsequent analysis (GEO accession: GSE280284, https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE280284 , accessed 10/25/2025).
@@ -124,7 +112,7 @@ insert code here
 * To install Seaborn, type the following command in the terminal: 
 `pip install seaborn`
 
-```
+```javascript
 #!/usr/bin/env python3
 
 #import modules needed for generating heatmap
@@ -180,17 +168,30 @@ plt.show()
 * To install scipy, type the following command in the terminal: 
 `pip install scipy`
 
-```
+```javascript
 #!/usr/bin/env python
 
+#!/usr/bin/env python
+#pip install scipy ## this is a unix command
 from pandas import DataFrame
 import numpy as np
 import matplotlib.pyplot as plt
 import scipy.stats
+import sys
+from dictionary_for_visualistion_final import make_dictionary_from_raw_data_for_visualisation
 
-#Raw data in a dictionary format. 
-raw_data = {'gene_1': [30, 20, 50, 60, 100, 200], 'gene_2': [40, 40, 50, 60, 100, 500]} #this is the parsed dictionary from the raw reads
-data = {'X': raw_data['gene_1'], 'Y': raw_data['gene_2']}
+#Raw data will be prepared in a dictionary format. 
+raw_orig = make_dictionary_from_raw_data_for_visualisation('GSE280284_Processed_data_files.txt')
+ctrl_dict = raw_orig[0] #this is the parsed dictionary from the raw reads
+exp_dict = raw_orig[1]
+# print(ctrl_dict)
+# print(exp_dict)
+
+geo1 = exp_dict[sys.argv[0]] #geneID of interest
+geo2 = exp_dict[sys.argv[1]] #geneID of interest
+# print(geo1)
+# print(geo2)
+data = {'X': geo1, 'Y': geo2}
 
 df = DataFrame(data, columns = ['X', 'Y'])
 m, b, r_value, p_value, std_err = scipy.stats.linregress(df['X'], df['Y'])
@@ -217,13 +218,12 @@ plt.show()
 
 print(f"R² = {r_value**2:.4f}")
 print(f"P-value = {p_value:.2e}")
+
 ```
 >**MASTER SCRIPT USING JUPITER NOTEBOOK**
 
-##Acknowledgement
-
-(group photo goes here)
-
+**Acknowledgement**
+![image](/Users/pfb/transcripthomies/TranscriptHomies/group.JPG)
 
 
 
