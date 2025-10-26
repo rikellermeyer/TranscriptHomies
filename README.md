@@ -6,18 +6,21 @@
 
 
 ## Objective: 
-Build a tool that identifies and visualizes gene–gene expression correlations between two biological groups (e.g., diseased vs. normal samples).
+Build a tool that identifies and visualizes gene–gene expression correlations between two biological groups (e.g., diseased vs. normal samples). Currently, there are analysis workflows for analyzing RNA-seq data to determine differential gene expression between 2 groups.
+However, what if you want to look at how differential gene expression is correlated between multiple genes from a dataset?
+Our tool addresses this problem.
 
-### General Project Outline: 
+### General Pipeline Outline: 
 
-1. 
-2.
-3.
-4.
+1. Input RNA-seq Dataset of raw counts (genes as rows, samples as columns)
+2. Determine which genes are differentially expressed between two groups
+3. Perform correlation statistics
+4. Represent correlation matrices as heatmaps
+5. Users can view the correlation between two genes as scatter plots generated from raw reads
 
 ## Data Organization (Grace)
 
-(include text here)
+Pipeline workflow
 ![image](/Users/pfb/transcripthomies/TranscriptHomies/TH_flowchart.png)
 
 ```
