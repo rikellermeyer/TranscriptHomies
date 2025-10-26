@@ -135,6 +135,9 @@ top20_file = f"DE_{cond1}_vs_{cond2}_paired_tabremzero_significant_NOTCLEAN_top2
 top20 = sig_results.head(20)
 top20.to_csv(top20_file, sep="\t", float_format="%.3e")
 
+# Save filtered counts
+filtered_counts.to_csv('final_input_remzeros.csv', index= True)
+
 # --- Print summary ---
 print(f"\n✅ Saved paired DESeq2 results to {out_file}")
 print(f"✅ Saved significant genes (padj < 0.05) to {sig_file}")
