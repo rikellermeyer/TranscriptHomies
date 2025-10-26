@@ -15,31 +15,75 @@ Build a tool that identifies and visualizes gene–gene expression correlations 
 3.
 4.
 
-## Input data search and formatting (Caroline)
-
-(Include text here)
-(if you want to insert an image, put images in folder, insert using [!filename.png])
-
-```
-insert code here
-
-
-
-
-```
-
-
 ## Data Organization (Grace)
 
 (include text here)
+![image](/Users/pfb/transcripthomies/TranscriptHomies/TH_flowchart.png)
 
 ```
 insert code here
 
 
 
+```
+
+## Input data search and formatting (Caroline)
+Public databases (including NCBI Gene Expression Omnibus (GEO)) were screened to identify bulk RNA-seq datasets comparing control and experimental conditions, with an emphasis on cancer-related research. A breast cancer dataset comprising paired samples of adjacent normal (control) and tumor (experimental) tissues from n = 6 patients was selected for subsequent analysis (GEO accession: GSE280284, https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE280284 , accessed 10/25/2025).
+(if you want to insert an image, put images in folder, insert using [!filename.png])
+
+>**Generation of a dictionary of lists for visualisation of raw counts**
+For the visualization of gene expression levels across samples from raw data:
+- the `pandas` package was imported
+the `raw_data.txt` file was formatted into two separate (“\t”-delimited) tables — listing the gene IDs and raw gene counts for samples from the control (normal adjacent tissue, Table 1) versus the experimental group (cancer tissue, Table 2)
+- a dictionary of lists was created for each table, using the gene identifier (here, "gene_id") as the key and a list of expression values for each gene across samples as the corresponding value
+- the function returns a tuple of both dictionaries containing `gene_dict_control` and `gene_dict_experimental`
+- to access each dictionary separately, the desired dictionary can be called from the tuple
+
+```javascript
+#!/usr/bin/env python3
+
+import pandas as pd
+
+gene_identifier = "gene_id"
+ends_with_experimental = "CP"
+ends_with_control = "C"
+
+def make_dictionary_from_raw_data_for_visualisation (filename):
+
+    df = pd.read_csv(filename, sep="\t", engine="python")
+
+    #  print(df.columns.tolist())
+    #  df.columns = df.columns.str.strip()
+
+    columns_to_keep_in_table_control = [gene_identifier] + [col for col in df.columns if col.endswith(ends_with_control)]
+    columns_to_keep_in_table_experimental = [gene_identifier] + [col for col in df.columns if col.endswith(ends_with_experimental)]
+
+    sliced_list_experimental = df[columns_to_keep_in_table_experimental]
+    sliced_list_control = df[columns_to_keep_in_table_control]
+
+    # print(sliced_list_control)
+    # print(sliced_list_experimental)
+
+    ds_columns_control = [col for col in df.columns if col.endswith(ends_with_control)]
+    df_ds = df[[gene_identifier] + ds_columns_control]
+    gene_dict_control = df_ds.set_index(gene_identifier)[ds_columns_control].apply(list, axis=1).to_dict()
+
+    ds_columns_experimental = [col for col in df.columns if col.endswith(ends_with_experimental)]
+    df_ds = df[[gene_identifier] + ds_columns_experimental]
+    gene_dict_experimental = df_ds.set_index(gene_identifier)[ds_columns_experimental].apply(list, axis=1).to_dict()
+
+    return gene_dict_control, gene_dict_experimental 
+
+filename = "GSE280284_Processed_data_files.txt"
+dictionary_complete_tuple = make_dictionary_from_raw_data_for_visualisation(filename)
+control_dict = dictionary_complete_tuple[0] 
+experimental_dict = dictionary_complete_tuple[1]
+
+# print(f'control_dict: {control_dict}')
+# print(f'experimental: {experimental_dict}')
 
 ```
+
 
 
 ## Correlation Analysis (Zilin and Tess)
@@ -68,7 +112,7 @@ insert code here
 * To install Seaborn, type the following command in the terminal: 
 `pip install seaborn`
 
-```
+```javascript
 #!/usr/bin/env python3
 
 #import modules needed for generating heatmap
@@ -124,17 +168,30 @@ plt.show()
 * To install scipy, type the following command in the terminal: 
 `pip install scipy`
 
-```
+```javascript
 #!/usr/bin/env python
 
+#!/usr/bin/env python
+#pip install scipy ## this is a unix command
 from pandas import DataFrame
 import numpy as np
 import matplotlib.pyplot as plt
 import scipy.stats
+import sys
+from dictionary_for_visualistion_final import make_dictionary_from_raw_data_for_visualisation
 
-#Raw data in a dictionary format. 
-raw_data = {'gene_1': [30, 20, 50, 60, 100, 200], 'gene_2': [40, 40, 50, 60, 100, 500]} #this is the parsed dictionary from the raw reads
-data = {'X': raw_data['gene_1'], 'Y': raw_data['gene_2']}
+#Raw data will be prepared in a dictionary format. 
+raw_orig = make_dictionary_from_raw_data_for_visualisation('GSE280284_Processed_data_files.txt')
+ctrl_dict = raw_orig[0] #this is the parsed dictionary from the raw reads
+exp_dict = raw_orig[1]
+# print(ctrl_dict)
+# print(exp_dict)
+
+geo1 = exp_dict[sys.argv[0]] #geneID of interest
+geo2 = exp_dict[sys.argv[1]] #geneID of interest
+# print(geo1)
+# print(geo2)
+data = {'X': geo1, 'Y': geo2}
 
 df = DataFrame(data, columns = ['X', 'Y'])
 m, b, r_value, p_value, std_err = scipy.stats.linregress(df['X'], df['Y'])
@@ -161,13 +218,12 @@ plt.show()
 
 print(f"R² = {r_value**2:.4f}")
 print(f"P-value = {p_value:.2e}")
+
 ```
 >**MASTER SCRIPT USING JUPITER NOTEBOOK**
 
-##Acknowledgement
-
-(group photo goes here)
-
+**Acknowledgement**
+![image](/Users/pfb/transcripthomies/TranscriptHomies/group.JPG)
 
 
 
