@@ -4,16 +4,15 @@ import pandas as pd
 from pydeseq2.dds import DeseqDataSet
 from pydeseq2.ds import DeseqStats
 
-
 # -------------------------------
 # Usage:
-# python breast_cancer_DESeq2_paired_filtered.py <counts.tsv> <condition1> <condition2>
+# python breast_cancer_DESeq2_paired_tab_remzeros_clean.py <counts.tsv> <condition1> <condition2>
 # Example:
-# python breast_cancer_DESeq2_paired_filtered.py GSE280284_Processed_data_files.txt C CP
-
+# python breast_cancer_DESeq2_paired_tab_remzeros_clean.py GSE280284_Processed_data_files.txt C CP
+# -------------------------------
 
 if len(sys.argv) != 4:
-    print("Usage: python breast_cancer_DESeq2_paired_filtered.py <counts.tsv> <condition1> <condition2>")
+    print("Usage: python breast_cancer_DESeq2_paired_tab_remzeros_clean.py <counts.tsv> <condition1> <condition2>")
     sys.exit(1)
 
 file, cond1, cond2 = sys.argv[1], sys.argv[2], sys.argv[3]
@@ -34,30 +33,17 @@ df = df.drop(columns=drop_cols)
 samples = [c for c in df.columns if c.endswith(cond1) or c.endswith(cond2)]
 counts = df[samples]
 
-# --- Filter low-count genes ---
-# Filtering criteria: keep genes with >= 10 counts in >= 3 samples
-MIN_COUNTS = 10
-MIN_SAMPLES = 3
+# --- Remove genes with all-zero counts ---
+zero_genes = counts[(counts == 0).all(axis=1)]
+filtered_counts = counts.loc[~(counts == 0).all(axis=1)]
 
-# Identify genes that pass the filter
-genes_pass_filter = (counts >= MIN_COUNTS).sum(axis=1) >= MIN_SAMPLES
-filtered_counts = counts[genes_pass_filter]
-removed_genes = counts[~genes_pass_filter]
-
-# Save removed genes
-removed_file = f"removed_low_count_genes_{cond1}_vs_{cond2}.txt"
-removed_genes.to_csv(removed_file, sep="\t")
-
-print(f"\n🧹 Gene Filtering Summary:")
-print(f"   Total genes before filtering: {len(counts)}")
-print(f"   Genes passing filter (>={MIN_COUNTS} counts in >={MIN_SAMPLES} samples): {len(filtered_counts)}")
-print(f"   Genes removed: {len(removed_genes)}")
-print(f"   Percentage kept: {len(filtered_counts)/len(counts)*100:.1f}%")
+removed_file = f"removed_zero_count_genes_{cond1}_vs_{cond2}_clean.txt"
+zero_genes.to_csv(removed_file, sep="\t")
+print(f"🧹 Removed {len(zero_genes)} genes with zero counts across all samples.")
 print(f"📁 Saved list of removed genes to: {removed_file}")
 
 # --- Helper: extract patient ID robustly ---
 def extract_patient_id(s, cond1, cond2):
-    """Strip condition suffix and normalize IDs with or without trailing zeros."""
     if s.endswith(cond2):
         base = s[: -len(cond2)]
     elif s.endswith(cond1):
@@ -68,20 +54,18 @@ def extract_patient_id(s, cond1, cond2):
         base = base[:-1]
     return base
 
-
 # --- Build metadata with patient IDs ---
-patients = [extract_patient_id(s, cond1, cond2) for s in filtered_counts.columns]
+patients = [extract_patient_id(s, cond1, cond2) for s in samples]
 meta = pd.DataFrame({
-    "sample": filtered_counts.columns,
+    "sample": samples,
     "patient": patients,
-    "condition": [cond1 if s.endswith(cond1) else cond2 for s in filtered_counts.columns]
-}, index=filtered_counts.columns)
-
+    "condition": [cond1 if s.endswith(cond1) else cond2 for s in samples]
+}, index=samples)
 
 # --- Check and print tumor-normal pairing ---
 print("\n🔍 Checking detected tumor-normal pairs:")
-tumor_samples = [s for s in filtered_counts.columns if s.endswith(cond1)]
-normal_samples = [s for s in filtered_counts.columns if s.endswith(cond2)]
+tumor_samples = [s for s in samples if s.endswith(cond1)]
+normal_samples = [s for s in samples if s.endswith(cond2)]
 paired_patients, missing_pairs = [], []
 
 for t in tumor_samples:
@@ -110,9 +94,7 @@ if missing_pairs:
 else:
     print("\n✅ All pairs detected successfully.")
 
-
 # --- Run DESeq2 with paired design (~ patient + condition) ---
-print("\n⚙️ Running DESeq2 paired analysis...")
 dds = DeseqDataSet(
     counts=filtered_counts.T,
     metadata=meta[["patient", "condition"]],
@@ -133,37 +115,26 @@ if gene_symbols is not None:
 if gene_names is not None:
     results = results.merge(gene_names, left_index=True, right_index=True, how="left")
 
-# --- Save all results (tab-delimited) ---
-out_file = f"DE_{cond1}_vs_{cond2}_paired_filtered.txt"
-results.to_csv(out_file, sep="\t")
+# --- Save results (scientific notation, 3 decimal places) ---
+out_all = f"DE_{cond1}_vs_{cond2}_paired_all_clean.txt"
+results.to_csv(out_all, sep="\t", float_format="%.3e")
 
-# --- Save only significant results (padj < 0.05) ---
+# --- Significant genes (padj < 0.05) ---
 sig_results = results[results["padj"] < 0.05].sort_values("padj")
-sig_file = f"DE_{cond1}_vs_{cond2}_paired_filtered_significant.txt"
-sig_results.to_csv(sig_file, sep="\t")
+sig_file = f"DE_{cond1}_vs_{cond2}_paired_significant_clean.txt"
+sig_results.to_csv(sig_file, sep="\t", float_format="%.3e")
 
-# --- Top 20 genes (same format as significant) ---
-top20_file = f"DE_{cond1}_vs_{cond2}_paired_filtered_top20.txt"
+# --- Top 20 genes ---
+top20_file = f"DE_{cond1}_vs_{cond2}_paired_top20_clean.txt"
 top20 = sig_results.head(20)
-top20.to_csv(top20_file, sep="\t")
+top20.to_csv(top20_file, sep="\t", float_format="%.3e")
 
-# Save filtered counts with gene annotations
-filtered_counts_with_annotations = filtered_counts.copy()
-if gene_symbols is not None:
-    filtered_counts_with_annotations = filtered_counts_with_annotations.merge(
-        gene_symbols, left_index=True, right_index=True, how="left"
-    )
-if gene_names is not None:
-    filtered_counts_with_annotations = filtered_counts_with_annotations.merge(
-        gene_names, left_index=True, right_index=True, how="left"
-    )
-filtered_counts_with_annotations.to_csv('final_input_filtered.csv', index=True)
-
-# --- Print summary ---
-print(f"\n✅ DESeq2 Analysis Complete!")
-print(f"📊 Results saved to: {out_file}")
-print(f"✨ Significant genes (padj < 0.05) saved to: {sig_file}")
+# --- Summary ---
+print(f"\n✅ Saved all DESeq2 results to {out_all}")
+print(f"✅ Saved significant genes (padj < 0.05) to {sig_file}")
+print(f"✅ Saved top 20 genes to {top20_file}")
 print(f"🧬 Total genes analyzed: {len(results)}")
-print(f"🔬 Significant genes found: {len(sig_results)}")
-print(f"🏆 Top 20 genes saved to: {top20_file}")
-print(f"📁 Filtered count matrix saved to: final_input_filtered.csv")
+print(f"✨ Significant genes found: {len(sig_results)}")
+
+
+#this script takes raw counts from ~100,000 genes, removes the genes with raw counts of zero, does the DESeq2 analysis, saves files with all genes, significant genes, and removed genes. It also prints out a list of the top 10 statistically significant genes. All numbers are rounded two decimal places. 
