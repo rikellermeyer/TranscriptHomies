@@ -24,12 +24,12 @@ def make_dictionary_from_raw_data_for_visualisation (filename):
 #divide it into two different data tables to run for loop: control (normal) & experimental (cancer)
 #using panda package you can merge the gene_ID as first column with any columns that contain sample identifier
 
-    columns_to_keep_in_table_control = [gene_identifier] + [col for col in df.columns if col.endswith(ends_with_control)]
-    columns_to_keep_in_table_experimental = [gene_identifier] + [col for col in df.columns if col.endswith(ends_with_experimental)]
+#     columns_to_keep_in_table_control = [gene_identifier] + [col for col in df.columns if col.endswith(ends_with_control)]
+#     columns_to_keep_in_table_experimental = [gene_identifier] + [col for col in df.columns if col.endswith(ends_with_experimental)]
 
-#df slices the DataFrame to keep only specific columns, that are here listed as columns_to_keep_in_table_experimental and columns_to_keep_in_table_control
-    sliced_list_experimental = df[columns_to_keep_in_table_experimental]
-    sliced_list_control = df[columns_to_keep_in_table_control]
+# #df slices the DataFrame to keep only specific columns, that are here listed as columns_to_keep_in_table_experimental and columns_to_keep_in_table_control
+#     sliced_list_experimental = df[columns_to_keep_in_table_experimental]
+#     sliced_list_control = df[columns_to_keep_in_table_control]
 
 # Display or use the trimmed DataFrame
     # print(sliced_list_control)
@@ -61,5 +61,5 @@ dictionary_complete_tuple = make_dictionary_from_raw_data_for_visualisation(file
 control_dict = dictionary_complete_tuple[0] 
 experimental_dict = dictionary_complete_tuple[1]
 
-# print(f'control_dict: {control_dict}')
-# print(f'experimental: {experimental_dict}')
+print(f'control_dict: {control_dict}')
+print(f'experimental: {experimental_dict}')

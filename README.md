@@ -23,13 +23,6 @@ Our tool addresses this problem.
 Pipeline workflow
 ![image](/Users/pfb/transcripthomies/TranscriptHomies/TH_flowchart.png)
 
-```
-insert code here
-
-
-
-```
-
 ## Input data search and formatting (Caroline)
 Public databases (including NCBI Gene Expression Omnibus (GEO)) were screened to identify bulk RNA-seq datasets comparing control and experimental conditions, with an emphasis on cancer-related research. A breast cancer dataset comprising paired samples of adjacent normal (control) and tumor (experimental) tissues from n = 6 patients was selected for subsequent analysis (GEO accession: GSE280284, https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE280284 , accessed 10/25/2025).
 (if you want to insert an image, put images in folder, insert using [!filename.png])
@@ -58,15 +51,6 @@ def make_dictionary_from_raw_data_for_visualisation (filename):
     #  print(df.columns.tolist())
     #  df.columns = df.columns.str.strip()
 
-    columns_to_keep_in_table_control = [gene_identifier] + [col for col in df.columns if col.endswith(ends_with_control)]
-    columns_to_keep_in_table_experimental = [gene_identifier] + [col for col in df.columns if col.endswith(ends_with_experimental)]
-
-    sliced_list_experimental = df[columns_to_keep_in_table_experimental]
-    sliced_list_control = df[columns_to_keep_in_table_control]
-
-    # print(sliced_list_control)
-    # print(sliced_list_experimental)
-
     ds_columns_control = [col for col in df.columns if col.endswith(ends_with_control)]
     df_ds = df[[gene_identifier] + ds_columns_control]
     gene_dict_control = df_ds.set_index(gene_identifier)[ds_columns_control].apply(list, axis=1).to_dict()
@@ -77,10 +61,10 @@ def make_dictionary_from_raw_data_for_visualisation (filename):
 
     return gene_dict_control, gene_dict_experimental 
 
-filename = "GSE280284_Processed_data_files.txt"
-dictionary_complete_tuple = make_dictionary_from_raw_data_for_visualisation(filename)
-control_dict = dictionary_complete_tuple[0] 
-experimental_dict = dictionary_complete_tuple[1]
+# filename = "GSE280284_Processed_data_files.txt"
+# dictionary_complete_tuple = make_dictionary_from_raw_data_for_visualisation(filename)
+# control_dict = dictionary_complete_tuple[0] 
+# experimental_dict = dictionary_complete_tuple[1]
 
 # print(f'control_dict: {control_dict}')
 # print(f'experimental: {experimental_dict}')
