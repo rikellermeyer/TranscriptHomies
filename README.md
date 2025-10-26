@@ -21,11 +21,10 @@ Our tool addresses this problem.
 ## Data Organization (Grace)
 
 Pipeline workflow
-![image](/Users/pfb/transcripthomies/TranscriptHomies/TH_flowchart.png)
+![alt text](TH_flowchart.png)
 
 ## Input data search and formatting (Caroline)
 Public databases (including NCBI Gene Expression Omnibus (GEO)) were screened to identify bulk RNA-seq datasets comparing control and experimental conditions, with an emphasis on cancer-related research. A breast cancer dataset comprising paired samples of adjacent normal (control) and tumor (experimental) tissues from n = 6 patients was selected for subsequent analysis (GEO accession: GSE280284, https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE280284 , accessed 10/25/2025).
-(if you want to insert an image, put images in folder, insert using [!filename.png])
 
 >**Generation of a dictionary of lists for visualisation of raw counts**
 For the visualization of gene expression levels across samples from raw data:
@@ -75,10 +74,143 @@ def make_dictionary_from_raw_data_for_visualisation (filename):
 
 ## Correlation Analysis (Zilin and Tess)
 
-(include text here)
+Inputs: 
+1.  gene expression matrix (genes x samples) from bulk RNA-Seq
+2.  Pathway of interest
+Output:
+Gene-gene correlation matrix
 
 ```
-insert code here
+# input 1: gene expression matrix (genes x samples)
+df = pd.read_csv("final_input_filtered.csv", index_col=0)
+print(df.head())
+# print(df.shape)        # should be (5, 6)
+# print(df.index)        # should be ['gene1', 'gene2', ...]
+# print(df.columns)      # should be ['s1NM', 's2NM', ...]
+# print(df.dtypes)       # should all be float
+
+# Split data: all but last two columns for normalization
+df_main = df.iloc[:, :-2]     # everything except last 2 columns
+df_extra = df.iloc[:, -2:]    # last 2 columns kept as-is
+
+# Convert to float and normalize
+df_main = df_main.astype(float)
+df_z = df_main.apply(lambda x: zscore(x), axis=1, result_type='broadcast')
+
+# Rejoin
+df_final = pd.concat([df_z, df_extra], axis=1)
+print(df_final.head())
+
+# Replace rowname with second-to-last column
+df_final.index = df.iloc[:, -2]
+# get rid of last two columns
+df_final = df_final.iloc[:, :-2]
+print(df_final.head())
+
+# input 2: pathway
+pathway = pd.read_csv("GO_pathways_genes.csv")
+print(pathway.head()) 
+
+poi = "GOBP_CYTOKINESIS"
+genes_in_pathway = pathway.loc[pathway['Pathway'] == poi, 'Gene'].tolist()
+print(f"Genes in pathway {poi}: {genes_in_pathway}")
+
+# filter df_final to include only genes in the pathway
+df_poi = df_final.loc[df_final.index.isin(genes_in_pathway)]
+print("Filtered expression DataFrame:\n", df_poi.head(), "\n")
+
+# Split columns by substring
+nm_cols = [c for c in df_poi.columns if "0CP" in c]
+ds_cols = [c for c in df_poi.columns if "P" not in c]
+
+# Create two separate DataFrames
+df_nm = df_poi[nm_cols]
+df_ds = df_poi[ds_cols]
+
+print("NM subset:\n", df_nm.head(), "\n")
+print("DS subset:\n", df_ds.head(), "\n")
+
+expression_df = df_nm # using only NM samples for correlation
+name = "NM"
+expression_df = expression_df.loc[expression_df.var(axis=1) > 1e-6] 
+print(expression_df)
+
+# gene-gene correlation matrix
+genes = expression_df.index
+#print(genes)
+n_genes = len(genes)
+
+pearson_corr = pd.DataFrame(np.zeros((n_genes, n_genes)), index=genes, columns=genes)
+pearson_pval = pd.DataFrame(np.zeros((n_genes, n_genes)), index=genes, columns=genes)
+
+spearman_corr = pd.DataFrame(np.zeros((n_genes, n_genes)), index=genes, columns=genes)
+spearman_pval = pd.DataFrame(np.zeros((n_genes, n_genes)), index=genes, columns=genes)
+
+# pairwise correlations and p-values
+for i, g1 in enumerate(genes):
+    for j, g2 in enumerate(genes):
+        if j >= i:
+            r, p = pearsonr(expression_df.loc[g1], expression_df.loc[g2])
+            pearson_corr.loc[g1, g2] = pearson_corr.loc[g2, g1] = r
+            pearson_pval.loc[g1, g2] = pearson_pval.loc[g2, g1] = p
+
+            r_s, p_s = spearmanr(expression_df.loc[g1], expression_df.loc[g2])
+            spearman_corr.loc[g1, g2] = spearman_corr.loc[g2, g1] = r_s
+            spearman_pval.loc[g1, g2] = spearman_pval.loc[g2, g1] = p_s
+
+
+# FDR (Benjamini-Hochberg) 
+# explain why FDR correction is needed
+pearson_fdr = pd.DataFrame(
+    false_discovery_control(pearson_pval.values.flatten(), method='bh').reshape(n_genes, n_genes),
+    index=genes, columns=genes
+)
+
+spearman_fdr = pd.DataFrame(
+    false_discovery_control(spearman_pval.values.flatten(), method='bh').reshape(n_genes, n_genes),
+    index=genes, columns=genes
+)
+
+print("Pearson Correlation Matrix:")
+print(pearson_corr)
+print("Pearson FDR Matrix:")
+print(pearson_fdr)
+print("Spearman Correlation Matrix:")
+print(spearman_corr)
+print("Spearman FDR Matrix:")
+print(spearman_fdr) 
+
+# Define FDR significance threshold
+fdr_threshold = 0.05
+
+# Count significant gene–gene pairs (excluding self-pairs)
+pearson_sig = np.sum((pearson_fdr < fdr_threshold).values) - len(genes)
+spearman_sig = np.sum((spearman_fdr < fdr_threshold).values) - len(genes)
+
+print(f"Significant Pearson pairs (FDR<{fdr_threshold}): {pearson_sig}")
+print(f"Significant Spearman pairs (FDR<{fdr_threshold}): {spearman_sig}")
+
+# Compare counts
+# highlight pearson vs spearman choosen method
+if pearson_sig > spearman_sig:
+    chosen_method = "pearson"
+elif spearman_sig > pearson_sig:
+    chosen_method = "spearman"
+else:
+    # Tie → compare average |r²|
+    pearson_r2 = np.nanmean(np.square(pearson_corr.values))
+    spearman_r2 = np.nanmean(np.square(spearman_corr.values))
+    chosen_method = "pearson" if pearson_r2 > spearman_r2 else "spearman"
+
+print(f"Chosen method: {chosen_method.upper()}")
+
+if chosen_method == "pearson":
+    pearson_corr.to_csv(f"pearson_gene_correlation_r2_{name}.csv")
+    pearson_fdr.to_csv(f"pearson_gene_correlation_fdr_{name}.csv")
+else:
+    spearman_corr.to_csv(f"spearman_gene_correlation_r2_{name}.csv")
+    spearman_fdr.to_csv(f"spearman_gene_correlation_fdr_{name}.csv")
+
 
 
 
@@ -210,8 +342,11 @@ print(f"P-value = {p_value:.2e}")
 >**MASTER SCRIPT USING JUPITER NOTEBOOK**
 
 **Acknowledgement**
-![image](/Users/pfb/transcripthomies/TranscriptHomies/group.JPG)
+![alt text](group.JPG)
 
 
 
 
+
+
+[def]: /Users/pfb/transcripthomies/TranscriptHomies/TH_flowchart.png
