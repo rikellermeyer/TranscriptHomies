@@ -71,8 +71,65 @@ def make_dictionary_from_raw_data_for_visualisation (filename):
 ```
 
 
-
 ## Correlation Analysis (Zilin and Tess)
+
+### PyDESeq2 Analysis: tests for differential expression by use of negative binomial generalized linear models
+
+### 1. Import Libraries and Set Parameters
+```javascript
+import pandas as pd
+from pydeseq2.dds import DeseqDataSet
+from pydeseq2.ds import DeseqStats
+
+file = "GSE280284_Processed_data_files.txt"
+cond1 = "C"
+cond2 = "CP"
+
+```
+
+### 2. Load and Filter Data
+```javascript
+df = pd.read_csv(file, sep="\t", index_col=0)
+samples = [c for c in df.columns if c.endswith(cond1) or c.endswith(cond2)]
+counts = df[samples]
+
+### Filter low-count genes (≥10 counts in ≥3 samples)
+MIN_COUNTS = 10
+MIN_SAMPLES = 3
+genes_pass_filter = (counts >= MIN_COUNTS).sum(axis=1) >= MIN_SAMPLES
+filtered_counts = counts[genes_pass_filter]
+
+``` 
+
+
+### 3. Run DESeq2 Paired Analysis
+```javascript
+dds = DeseqDataSet(
+    counts=filtered_counts.T,
+    metadata=meta[["patient", "condition"]],
+    design_factors=["patient", "condition"]
+)
+dds.deseq2()
+```
+### 4. Get Significant Results
+```javascript
+stat_res = DeseqStats(dds, contrast=["condition", cond1, cond2])
+stat_res.summary()
+sig_results = results[results["padj"] < 0.05].sort_values("padj")
+```
+
+### 5. Output Summary 
+```javascript
+# --- Print summary ---
+print(f"\n✅ DESeq2 Analysis Complete!")
+print(f"📊 Results saved to: {out_file}")
+print(f"✨ Significant genes (padj < 0.05) saved to: {sig_file}")
+print(f"🧬 Total genes analyzed: {len(results)}")
+print(f"🔬 Significant genes found: {len(sig_results)}")
+print(f"🏆 Top 20 genes saved to: {top20_file}")
+print(f"📁 Filtered count matrix saved to: final_input_filtered.csv") 
+```
+
 
 Inputs: 
 1.  gene expression matrix (genes x samples) from bulk RNA-Seq
