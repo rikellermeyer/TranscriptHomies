@@ -26,48 +26,54 @@ Pipeline workflow
 ## Input data search and formatting (Caroline)
 Public databases (including NCBI Gene Expression Omnibus (GEO)) were screened to identify bulk RNA-seq datasets comparing control and experimental conditions, with an emphasis on cancer-related research. A breast cancer dataset comprising paired samples of adjacent normal (control) and tumor (experimental) tissues from n = 6 patients was selected for subsequent analysis (GEO accession: GSE280284, https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE280284 , accessed 10/25/2025).
 
->**Generation of a dictionary of lists for visualisation of raw counts**
-For the visualization of gene expression levels across samples from raw data:
-- the `pandas` package was imported
-the `raw_data.txt` file was formatted into two separate (“\t”-delimited) tables — listing the gene IDs and raw gene counts for samples from the control (normal adjacent tissue, Table 1) versus the experimental group (cancer tissue, Table 2)
-- a dictionary of lists was created for each table, using the gene identifier (here, "gene_id") as the key and a list of expression values for each gene across samples as the corresponding value
-- the function returns a tuple of both dictionaries containing `gene_dict_control` and `gene_dict_experimental`
-- to access each dictionary separately, the desired dictionary can be called from the tuple
+>**Generation of Dictionaries for Raw Read Count Visualization**
+
+To visualize the read counts from raw data across samples:
+- The `pandas` package was imported.
+- The `raw_data.txt` file was parsed into two tab-delimited data frames: one for control samples (normal adjacent tissue) and one for experimental samples (cancer tissue).
+- For each data frame, a dictionary of lists was generated using gene names (listed under the `"symbol"` column) as keys and corresponding raw read counts across samples as values.
+- The function returns a tuple containing both dictionaries: `gene_dict_control` and `gene_dict_experimental`.
+- Each dictionary can be accessed individually by calling it from the returned tuple.
 
 ```javascript
 #!/usr/bin/env python3
 
 import pandas as pd
 
-gene_identifier = "gene_id"
-ends_with_experimental = "CP"
-ends_with_control = "C"
+def make_dictionary_from_raw_data_for_visualisation(filename):
 
-def make_dictionary_from_raw_data_for_visualisation (filename):
-
+    # Read the file
     df = pd.read_csv(filename, sep="\t", engine="python")
 
-    #  print(df.columns.tolist())
-    #  df.columns = df.columns.str.strip()
+    # Clean column labels
+    df.columns = df.columns.str.strip()
 
-    ds_columns_control = [col for col in df.columns if col.endswith(ends_with_control)]
-    df_ds = df[[gene_identifier] + ds_columns_control]
-    gene_dict_control = df_ds.set_index(gene_identifier)[ds_columns_control].apply(list, axis=1).to_dict()
+    # Extract gene identifier column
+    gene_identifier = df['symbol']
 
-    ds_columns_experimental = [col for col in df.columns if col.endswith(ends_with_experimental)]
-    df_ds = df[[gene_identifier] + ds_columns_experimental]
-    gene_dict_experimental = df_ds.set_index(gene_identifier)[ds_columns_experimental].apply(list, axis=1).to_dict()
+    # Extract experimental and control columns
+    df_experimental = df.iloc[:, 1:7]  # columns 1 to 6
+    df_control = df.iloc[:, 7:12]      # columns 7 to 11
 
-    return gene_dict_control, gene_dict_experimental 
+    # create seperate data frames for control and experimental condition
+    df_ds_experimental = pd.concat([gene_identifier, df_experimental], axis=1)
+    df_ds_control = pd.concat([gene_identifier, df_control], axis=1)
 
-# filename = "GSE280284_Processed_data_files.txt"
-# dictionary_complete_tuple = make_dictionary_from_raw_data_for_visualisation(filename)
-# control_dict = dictionary_complete_tuple[0] 
-# experimental_dict = dictionary_complete_tuple[1]
+    # Create dictionary of lists
+    gene_dict_experimental = df_ds_experimental.set_index('symbol').apply(list, axis=1).to_dict()
+    gene_dict_control = df_ds_control.set_index('symbol').apply(list, axis=1).to_dict()
 
-# print(f'control_dict: {control_dict}')
-# print(f'experimental: {experimental_dict}')
+    return gene_dict_control, gene_dict_experimental
 
+# test run
+filename = "GSE280284_Processed_data_files.txt"
+dictionary_complete_tuple = make_dictionary_from_raw_data_for_visualisation(filename)
+# call dictionaries from tuple that is returned by function make_dictionary_from_raw_data_for_visualisation()
+control_dict = dictionary_complete_tuple[0] 
+experimental_dict = dictionary_complete_tuple[1]
+ # print control dict
+print(f'control_dict: {control_dict}')
+print(f'experimental: {experimental_dict}')
 ```
 
 
