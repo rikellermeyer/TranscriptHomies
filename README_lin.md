@@ -126,7 +126,7 @@ spearman_fdr = pd.DataFrame(
 ## Visualization and Output (HeaJin & Lin)
 
 >**Net Graph**
-
+```
 ```javascript
 import matplotlib.pyplot as plt
 import networkx as nx
@@ -200,7 +200,6 @@ plt.show()
 ```
 <img width="798" height="668" alt="Screenshot 2025-10-27 at 12 06 08 PM" src="https://github.com/user-attachments/assets/ba27385e-2013-4a81-aa11-a54697937038" />
 <img width="816" height="677" alt="Screenshot 2025-10-27 at 12 01 35 PM" src="https://github.com/user-attachments/assets/05ad2a6b-4767-4528-9f7b-75a7752d2d45" />
-
 
 >**HEATMAP**
 * The heat map will be a 2D graphical representation of how genes are correlated to each other (based on the R² values).
