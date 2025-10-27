@@ -72,7 +72,7 @@ def make_dictionary_from_raw_data_for_visualisation (filename):
 
 
 
-## Correlation Analysis (Zilin and Tess)
+## Correlation Analysis (Zilin)
 
 Inputs: 
 1.  gene expression matrix (genes x samples) from bulk RNA-Seq
@@ -81,60 +81,7 @@ Output:
 Gene-gene correlation matrix
 
 ```
-# input 1: gene expression matrix (genes x samples)
-df = pd.read_csv("final_input_filtered.csv", index_col=0)
-print(df.head())
-# print(df.shape)        # should be (5, 6)
-# print(df.index)        # should be ['gene1', 'gene2', ...]
-# print(df.columns)      # should be ['s1NM', 's2NM', ...]
-# print(df.dtypes)       # should all be float
-
-# Split data: all but last two columns for normalization
-df_main = df.iloc[:, :-2]     # everything except last 2 columns
-df_extra = df.iloc[:, -2:]    # last 2 columns kept as-is
-
-# Convert to float and normalize
-df_main = df_main.astype(float)
-df_z = df_main.apply(lambda x: zscore(x), axis=1, result_type='broadcast')
-
-# Rejoin
-df_final = pd.concat([df_z, df_extra], axis=1)
-print(df_final.head())
-
-# Replace rowname with second-to-last column
-df_final.index = df.iloc[:, -2]
-# get rid of last two columns
-df_final = df_final.iloc[:, :-2]
-print(df_final.head())
-
-# input 2: pathway
-pathway = pd.read_csv("GO_pathways_genes.csv")
-print(pathway.head()) 
-
-poi = "GOBP_CYTOKINESIS"
-genes_in_pathway = pathway.loc[pathway['Pathway'] == poi, 'Gene'].tolist()
-print(f"Genes in pathway {poi}: {genes_in_pathway}")
-
-# filter df_final to include only genes in the pathway
-df_poi = df_final.loc[df_final.index.isin(genes_in_pathway)]
-print("Filtered expression DataFrame:\n", df_poi.head(), "\n")
-
-# Split columns by substring
-nm_cols = [c for c in df_poi.columns if "0CP" in c]
-ds_cols = [c for c in df_poi.columns if "P" not in c]
-
-# Create two separate DataFrames
-df_nm = df_poi[nm_cols]
-df_ds = df_poi[ds_cols]
-
-print("NM subset:\n", df_nm.head(), "\n")
-print("DS subset:\n", df_ds.head(), "\n")
-
-expression_df = df_nm # using only NM samples for correlation
-name = "NM"
-expression_df = expression_df.loc[expression_df.var(axis=1) > 1e-6] 
-print(expression_df)
-
+```javascript
 # gene-gene correlation matrix
 genes = expression_df.index
 #print(genes)
@@ -171,48 +118,7 @@ spearman_fdr = pd.DataFrame(
     index=genes, columns=genes
 )
 
-print("Pearson Correlation Matrix:")
-print(pearson_corr)
-print("Pearson FDR Matrix:")
-print(pearson_fdr)
-print("Spearman Correlation Matrix:")
-print(spearman_corr)
-print("Spearman FDR Matrix:")
-print(spearman_fdr) 
-
-# Define FDR significance threshold
-fdr_threshold = 0.05
-
-# Count significant gene–gene pairs (excluding self-pairs)
-pearson_sig = np.sum((pearson_fdr < fdr_threshold).values) - len(genes)
-spearman_sig = np.sum((spearman_fdr < fdr_threshold).values) - len(genes)
-
-print(f"Significant Pearson pairs (FDR<{fdr_threshold}): {pearson_sig}")
-print(f"Significant Spearman pairs (FDR<{fdr_threshold}): {spearman_sig}")
-
-# Compare counts
-# highlight pearson vs spearman choosen method
-if pearson_sig > spearman_sig:
-    chosen_method = "pearson"
-elif spearman_sig > pearson_sig:
-    chosen_method = "spearman"
-else:
-    # Tie → compare average |r²|
-    pearson_r2 = np.nanmean(np.square(pearson_corr.values))
-    spearman_r2 = np.nanmean(np.square(spearman_corr.values))
-    chosen_method = "pearson" if pearson_r2 > spearman_r2 else "spearman"
-
-print(f"Chosen method: {chosen_method.upper()}")
-
-if chosen_method == "pearson":
-    pearson_corr.to_csv(f"pearson_gene_correlation_r2_{name}.csv")
-    pearson_fdr.to_csv(f"pearson_gene_correlation_fdr_{name}.csv")
-else:
-    spearman_corr.to_csv(f"spearman_gene_correlation_r2_{name}.csv")
-    spearman_fdr.to_csv(f"spearman_gene_correlation_fdr_{name}.csv")
-
-
-
+```
 
 
 ```
