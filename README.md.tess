@@ -75,7 +75,7 @@ def make_dictionary_from_raw_data_for_visualisation (filename):
 
 ## Correlation Analysis (Zilin and Tess)
 
-### PyDESeq2 Analysis: methods to test for differential expression by use of negative binomial generalized linear models
+### PyDESeq2 Analysis: tests for differential expression by use of negative binomial generalized linear models
 
 ### 1. Import Libraries and Set Parameters
 ```javascript
