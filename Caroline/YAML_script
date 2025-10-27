@@ -1,0 +1,14 @@
+----
+# config.yaml
+#Here please provide the filename or file path, as well as the delimiter of the data set
+filename: "GSE280284_Processed_data_files.txt"
+delimiter: "\t"
+
+#Here you can add the columns you would like to be included in the table to analyse
+columns:
+  index: [0] #please include theindex of the gene_id column
+  experimental: [1, 2, 3, 4, 5, 6] # please inlude the indices or lit(range()) of the experimental samples
+  control: [7, 8, 9, 10, 11, 12] # please inlude the indices or lit(range()) of the control samples
+
+#Here please add the output directory:
+output: 
