@@ -58,5 +58,71 @@ df_control = df.iloc[:, list(range(7, 12))]
 
 df_ds = pd.concat([df_index, df_experimental], axis=1)
 
-print(df_ds)
 
+
+
+def make_dictionary_from_raw_data_for_visualisation (filename):
+
+#create variable datafile to read the text document with Panda
+# sep="\s+" is a regular expression (regex) that tells pandas how to split the columns when reading the file
+#s= means one or more white spaces (dummy data set may have more than one, had issue running it)
+#engine = python is needed when regular expression is needed for reading the document (here s+)
+    df = pd.read_csv(filename, sep="\t", engine="python")
+
+#check headers to understand how to organise experimental versus control columns
+    #  print(df.columns.tolist())
+
+#remove any white space in column names that may interfere with naming
+    df.columns = df.columns.str.strip()
+
+#make a list in a dictionary: gene_id as key, list of counts of each sample as corresponding value
+#it iterates through all columns that are not "g_IDs" and adds to list
+# for this prepare one table with columns for the list and one with where gene_id is determined as key
+    gene_identifier = df.iloc[:, [12]]
+    df_experimental = df.iloc[:, [1, 2, 3, 4, 5, 6]]
+    df_control = df.iloc[:, list(range(7, 12))]
+
+    df_ds_experimental = pd.concat([gene_identifier, df_experimental], axis=1)
+    df_ds_control = pd.concat([gene_identifier, df_control], axis=1)
+
+    gene_dict_control = df_ds.set_index(gene_identifier)[ df_ds_control].apply(list, axis=1).to_dict()
+   
+    gene_dict_experimental = df_ds.set_index(gene_identifier)[df_ds_experimental ].apply(list, axis=1).to_dict()
+
+    return gene_dict_control, gene_dict_experimental #provides result as tuple, to have each dictionary we have to extract each dictionary from tuple (see below)
+
+
+# Print the result as control
+# print(gene_dict_control)
+# print(gene_dict_experimental)
+
+
+filename = "GSE280284_Processed_data_files.txt"
+dictionary_complete_tuple = make_dictionary_from_raw_data_for_visualisation(filename)
+control_dict = dictionary_complete_tuple[0] 
+experimental_dict = dictionary_complete_tuple[1]
+
+print(f'control_dict: {control_dict}')
+print(f'experimental: {experimental_dict}')
+
+# print(df_ds)
+
+# import yaml
+
+# # Load YAML config
+# with open("config.yaml", "r") as file:
+#     config = yaml.safe_load(file)
+
+# filename = config["filename"]
+
+# # Read file using config
+# df = pd.read_csv(filename, sep="delimiter")
+
+# # Slice columns based on config
+# df_index = df.iloc[:, config["columns"]["index"]]
+# df_experimental = df.iloc[:, config["columns"]["experimental"]]
+# df_control = df.iloc[:, config["columns"]["control"]]
+
+# # Combine index and experimental columns
+# df_ds = pd.concat([df_index, df_experimental], axis=1)
+# print(df_ds)
