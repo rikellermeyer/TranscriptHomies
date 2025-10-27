@@ -123,7 +123,85 @@ spearman_fdr = pd.DataFrame(
 
 ```
 
-## Visualization and Output (HeaJin)
+## Visualization and Output (HeaJin & Lin)
+
+>**Net Graph**
+
+```javascript
+import matplotlib.pyplot as plt
+import networkx as nx
+import numpy as np
+
+G = nx.DiGraph()
+
+# Add edges with weights (probabilities)
+n = 0
+maxN = 10000
+for from_gene in transition_df.index:
+    for to_gene in transition_df.columns:
+        fdr = transition_fdr.loc[from_gene, to_gene]
+        weight = transition_df.loc[from_gene, to_gene]
+        if abs(weight) > 0 and from_gene != to_gene and fdr < 0.01:
+            G.add_edge(from_gene, to_gene, weight=weight)
+            n += 1
+            if n >= maxN:
+                break
+        if n >= maxN:
+            break
+
+# adjusted spacing for nodes
+pos = nx.spring_layout(G, seed=42, k=0.5)  # Adjust 'k' for more spacing, larger k = more spacing
+# or circular_layout for even spacing
+# pos = nx.circular_layout(G)
+
+# Get edge weights
+weights = [G[u][v]['weight'] * 5 for u, v in G.edges()]  # scale up for visibility
+
+# Set up colormap for edge colors
+cmap = plt.cm.coolwarm
+
+# Normalize weights between 0 and 1 for colormap scaling
+norm = plt.Normalize(vmin=min(weights), vmax=max(weights))
+edge_colors = [cmap(norm(w)) for w in weights]
+
+# Set up the plot
+fig, ax = plt.subplots(figsize=(12, 10), constrained_layout=True)
+
+# Draw the network
+nx.draw(
+    G,
+    pos,
+    with_labels=True,
+    node_size=1000,
+    node_color="lightgrey",
+    edge_color=edge_colors,
+    width=2,
+    font_size=7,  # Adjust font size for labels
+    arrows=True,
+    ax=ax
+)
+
+# Colorbar
+sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
+sm.set_array([])
+cbar = fig.colorbar(sm, ax=ax, fraction=0.03, pad=0.04)
+cbar.set_label("Correlation Strength")
+
+# Edge labels with smaller font size
+edge_labels = {(u, v): f"{G[u][v]['weight']:.2f}" for u, v in G.edges()}
+nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels, font_color="black", font_size=6, ax=ax)
+
+# Title
+plt.title("Gene Interaction Network (Edge Color = Correlation Strength)", fontsize=14)
+
+# Show the plot
+plt.show()
+
+```
+<img width="798" height="668" alt="Screenshot 2025-10-27 at 12 06 08 PM" src="https://github.com/user-attachments/assets/ba27385e-2013-4a81-aa11-a54697937038" />
+<img width="816" height="677" alt="Screenshot 2025-10-27 at 12 01 35 PM" src="https://github.com/user-attachments/assets/05ad2a6b-4767-4528-9f7b-75a7752d2d45" />
+
+
 >**HEATMAP**
 * The heat map will be a 2D graphical representation of how genes are correlated to each other (based on the R² values).
 * The heat map will be generated on cancer and adjacent normal cells. 
